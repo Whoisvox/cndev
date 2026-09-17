@@ -1,0 +1,26 @@
+groups:
+- name: logsvc.slo
+  interval: 5m
+  rules: 
+  - record: slo:logsvc_availability:ratio28d
+    expr: 1 - (sum(rate(http_requests_total{path="/ping", status=~"5.."}[28d]))
+      or vector(0)) / sum(rate(http_requests_total{path="/ping"}[28d]))
+  - record: slo:logsvc_latency5ms:ratio28d
+    expr: sum(rate(http_request_duration_seconds_bucket{path="/ping", le="0.005"}[28d]))
+      / sum(rate(http_request_duration_seconds_count{path="/ping"}[28d]))
+  - record: slo:logsvc_availability:error_budget_remaining
+    expr: (slo:logsvc_availability:ratio28d - 0.999) / (1 - 0.999)
+  - record: slo:logsvc_latency5ms:error_budget_remaining
+    expr: (slo:logsvc_latency5ms:ratio28d - 0.99) / (1 - 0.99)
+- name: logsvc.slo.ingredient
+  interval: 1m
+  rules: 
+  - record: slo:logsvc_availability:success_ratio5m
+    expr: 1 - (sum(rate(http_requests_total{path="/ping", status=~"5.."}[5m]))
+      or vector(0)) / sum(rate(http_requests_total{path="/ping"}[5m]))
+  - record: slo:logsvc_availability:success_ratio1h
+    expr: 1 - (sum(rate(http_requests_total{path="/ping", status=~"5.."}[1h]))
+      or vector(0)) / sum(rate(http_requests_total{path="/ping"}[1h]))
+  - record: slo:logsvc_availability:success_ratio6h
+    expr: 1 - (sum(rate(http_requests_total{path="/ping", status=~"5.."}[6h]))
+      or vector(0)) / sum(rate(http_requests_total{path="/ping"}[6h]))

@@ -1,0 +1,19 @@
+run:
+  timeout: 2m
+
+linters:
+  enable:
+    - misspell     # 拼写错误(注释/字符串里的英文单词拼错)
+    - errorlint    # 错误处理规范:%w 包装、errors.Is/As
+    - revive       # 命名与代码风格(golint 的现代替代)
+    - unconvert    # 多余的类型转换
+    - gocritic     # 一批常见的可读性/性能建议
+
+issues:
+  exclude-rules: 
+    - linters: 
+        - revive
+      text: "unused-parameter"
+  # 默认会隐藏部分重复告警,关掉让你看全
+  max-issues-per-linter: 0
+  max-same-issues: 0
