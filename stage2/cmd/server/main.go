@@ -268,13 +268,19 @@ func main() {
 	// no more need redundant os.Exit(0) or return
 }
 
+func chain(stat *ServeStat, inner http.Handler) http.Handler {
+	return withObservaility(stat.ObsConfig)(
+		withRecovery(
+			withAuthenticator(stat.cfg)(
+				inner)))
+}
 func newHandler(stat *ServeStat) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ping", pingHandler)
 	mux.HandleFunc("GET /healthz", stat.healthzHandler)
 	mux.HandleFunc("GET /readyz", stat.readyzHandler)
 	mux.Handle("GET /metrics", promhttp.Handler())
-	return withRecovery(withObservaility(stat.ObsConfig)(withAuthenticator(stat.cfg)(http.TimeoutHandler(mux, stat.cfg.HandlerTimeout, "request timeout\n"))))
+	return chain(stat, http.TimeoutHandler(mux, stat.cfg.HandlerTimeout, "request timeout\n"))
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -362,7 +368,6 @@ func withObservaility(obsconfig ObsConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			level := slog.LevelInfo
 
 			// call itself handler
 			// status:200 behalf defalt 200 implicitly before handler didn't call WriteHeader
@@ -382,15 +387,8 @@ func withObservaility(obsconfig ObsConfig) func(http.Handler) http.Handler {
 				}
 			}
 
-			// Set LogLevel for diff status
-			switch {
-			case rec.status >= 500:
-				level = slog.LevelError
-			case rec.status >= 400:
-				level = slog.LevelWarn
-			default:
-				level = slog.LevelInfo
-			}
+			level := levelForStatus(rec.status)
+
 			// After request, printing log
 			slog.Log(
 				context.Background(),
@@ -413,5 +411,17 @@ func withObservaility(obsconfig ObsConfig) func(http.Handler) http.Handler {
 				"path":   r.URL.Path,
 			}).Observe(time.Since(start).Seconds())
 		})
+	}
+}
+
+func levelForStatus(status int) slog.Level {
+	// Set LogLevel for diff status
+	switch {
+	case status >= 500:
+		return slog.LevelError
+	case status >= 400:
+		return slog.LevelWarn
+	default:
+		return slog.LevelInfo
 	}
 }
