@@ -50,7 +50,7 @@ spec:
       - name: harbor-local174
       containers:
       - name: logsvc
-        image: 192.168.5.174:80/godev/logsvc:v21
+        image: 192.168.5.174:80/godev/logsvc:v12
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
