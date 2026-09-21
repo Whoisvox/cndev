@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go version *)",
+      "Bash(mkdir -p /tmp/thpanic)",
+      "Bash(go build *)"
+    ]
+  }
+}
