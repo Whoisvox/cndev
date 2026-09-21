@@ -1,5 +1,7 @@
-# gap 
-1. increase()是估计值，数据外推遇到上一个周期右边界的样本，就会变多
-2. 只打了10个warn等级的401是因为我当前的LOG_LEVEL是warn，200是INFO就没有到loki。
+# gap
+1. 分析increase外推
 
-#
+## 改中间件顺序
+1. withObservaility(withRecovery(withAuthenticator(TimeoutHandler(mux))))
+panic路径是 mux panic -> TimeoutHandler搬运到下一层重抛 -> authenticator -> withRecovery接住，writeHeader(500) -> request行按ERROR打，Inc(status=500)
+
