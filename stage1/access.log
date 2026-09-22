@@ -1,0 +1,5 @@
+200 GET /
+404 GET /missing
+200 GET /home
+500 POST /api
+200 GET /

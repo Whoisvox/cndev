@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Go build & test artifacts
+bin/
+dist/
+
+# Local config / secrets
+.env
+*.local
+config/local.yaml
+
+# Docs / CI / Misc
+docs/
+Makefile
+*.md
+LICENSE
+
+# Test / coverage
+customers/
+cmd/customers/
+
+# Docker itself
+Dockerfile
+docker-compose.yml
+.dockerignore
