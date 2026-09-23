@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logsvc-log-alerts
+  namespace: godev
+  labels:
+    loki_rule: "1"        # ← sidecar 就认这个,没有它永远不同步
+data:
+  logsvc-log-alerts.yaml: |
+    groups:
+    - name: logsvc.logs
+      rules:
+      - alert: LogsvcErrorBurst
+        expr: sum(count_over_time({app="logsvc", level="ERROR"}[5m])) > 5
+        for: 1m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "logsvc ERROR 日志激增"
+          description: "5m 内 {{ $value }} 行 ERROR"
