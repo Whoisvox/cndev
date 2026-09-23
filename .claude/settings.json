@@ -3,7 +3,25 @@
     "allow": [
       "Bash(go version *)",
       "Bash(mkdir -p /tmp/thpanic)",
-      "Bash(go build *)"
+      "Bash(go build *)",
+      "Bash(rm -rf /tmp/ordertest)",
+      "Bash(mkdir -p /tmp/ordertest)",
+      "Bash(cp -r /data/cndev/stage2/* /tmp/ordertest/)",
+      "Read(//tmp/**)",
+      "Bash(python3 -)",
+      "Bash(rm -rf /tmp/ordertest && echo \"临时对照副本已删除\" *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 5 localhost:3100/prometheus/fake/api/v1/rules)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 5 localhost:3100/prometheus/api/v1/rules)",
+      "Bash(curl -s --max-time 5 localhost:3100/prometheus/fake/api/v1/rules)",
+      "Bash(curl -s --max-time 5 localhost:3100/prometheus/api/v1/rules)",
+      "Bash(curl -s --max-time 5 localhost:3100/config)",
+      "Bash(awk '/^ruler:/,/^[a-z_]+:/' /tmp/loki-config.txt)",
+      "Bash(curl -s --max-time 5 localhost:3100/prometheus/api/v1/alerts)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 5 -H \"Authorization: Bearer token\" http://192.168.5.242:30222/ping)",
+      "Bash(xargs -I{} echo \"  alerting_rules.yml 里 NoTraffic 出现次数: {}\")"
+    ],
+    "additionalDirectories": [
+      "/tmp/ordertest"
     ]
   }
 }
