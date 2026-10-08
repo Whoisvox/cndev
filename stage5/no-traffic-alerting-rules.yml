@@ -1,0 +1,40 @@
+# T4 部署材料:LogsvcNoTraffic 告警规则
+#
+# 用法(在 master 上):
+#   编辑 /data/k8s/helmCharts/prometheus/values.yaml,
+#   找到 serverFiles.alerting_rules.yml,把它的内容整体替换为下面的 groups 块
+#   (缩进和你上次加 FastBurn/SlowBurn 时完全一致),然后 helm upgrade。
+#
+# 本文件 = 集群当前生效的两条规则(从 live ConfigMap 原样导出)+ 追加的 LogsvcNoTraffic。
+# NoTraffic 表达式已于 2026-09-24 在集群实测:返回 0(满足触发条件),
+# 即部署后 ~6 分钟内(1h 窗口已满足 + for: 5m)它应当 FIRING。
+groups:
+- name: logsvc_availability
+  rules:
+  - alert: LogsvcAvailabilityFastBurn
+    annotations:
+      description: Fast Burn,1h and 5m >= 14.4
+      summary: Logsvc availability fast burn
+    expr: |
+      (1-slo:logsvc_availability:success_ratio1h)/(1-0.999) >= 14.4 and (1-slo:logsvc_availability:success_ratio5m)/(1-0.999) >= 14.4 and sum(rate(http_requests_total{path="/ping"}[1h])) > 5
+    for: 1m
+    labels:
+      severity: page
+  - alert: LogsvcAvailabilitySlowBurn
+    annotations:
+      description: Slow Burn, 6h and 1h >= 6
+      summary: Logsvc availability slow burn
+    expr: |
+      (1-slo:logsvc_availability:success_ratio6h)/(1-0.999) >=6 and (1-slo:logsvc_availability:success_ratio1h)/(1-0.999) >= 6 and sum(rate(http_requests_total{path="/ping"}[1h])) > 5
+    for: 2m
+    labels:
+      severity: ticket
+  - alert: LogsvcNoTraffic
+    annotations:
+      description: Pod Ready 却无 /ping 流量:要么真没用户,要么流量/采集断了;此刻所有基于错误率的告警全部失明(stage4 假恢复盲区)
+      summary: logsvc 存活但 1h 零业务流量
+    expr: |
+      sum(rate(http_requests_total{path="/ping"}[1h])) == 0 and on() count(kube_pod_status_ready{namespace="godev",pod=~"logsvc.*",condition="true"} > 0) > 0
+    for: 5m
+    labels:
+      severity: ticket
