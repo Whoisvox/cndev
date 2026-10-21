@@ -128,3 +128,17 @@ Q1：为什么selfHeal开，prune关？
 
 ## T1 收编prometheus loki grafana(缺pvc)
 *argo UI建multi-source helm app不可靠，需要手动走kubectl*
+1. ref/path区别？
+由于每个source独立渲染，ref是给别的source提供可引用文件($values)接线的原料，它自己不产manifest；path是把目录当成manifest渲染。
+2. 为什么source3不能带ref?
+如果source3只写ref，不写path，其退化为一个纯引用源，一个manifest都不渲染。后果是 argoCD中由于资源清单根本没有cm，chart的5个资源照常Synced又是恒绿灯；集群层则引用一个不存在的cm，pod会卡在容器创建，因为cm-"grafana-dashboards"找不到，health变degraded。
+3. 资源数预测
+secret会消失，existingSecret生效后不再渲染
+
+**grafana是否切automated + selfHeal(prune关), 切，但是ui手点dashboard进入未受管区，不被删也不被信**
+
+
+**三条重点**
+- git是唯一真相：改配置=改git+push，不再kubectl edit / helm upgrade
+- 渲染必须确认： 同样的commit渲染结果必须一样(grafana随机密码违反过)
+- ui点击都会丢： grafana看板必须走provisioning(导出JSON->重跑configmap->commit)
