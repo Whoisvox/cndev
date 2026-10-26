@@ -142,3 +142,8 @@ secret会消失，existingSecret生效后不再渲染
 - git是唯一真相：改配置=改git+push，不再kubectl edit / helm upgrade
 - 渲染必须确认： 同样的commit渲染结果必须一样(grafana随机密码违反过)
 - ui点击都会丢： grafana看板必须走provisioning(导出JSON->重跑configmap->commit)
+
+**问答题**
+- argocd-cm里的timeout.reconciliation现在归argo管，源文件在git里。
+- 如果要从120s->60s，应该先改git，然后commit push，等待argo的定时(这里还是120s)，应用后下一次更改才会是60s
+- 如果有人手贱kubectl edit cm argocd-cm改到300s，由于没有selfHeal，syncPolicy为空，集群会直接应用，但是argo-server-repo会提示outofsynced，需要手动sync改回。
