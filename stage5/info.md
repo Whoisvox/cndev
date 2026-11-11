@@ -144,6 +144,9 @@ secret会消失，existingSecret生效后不再渲染
 - ui点击都会丢： grafana看板必须走provisioning(导出JSON->重跑configmap->commit)
 
 **问答题**
-- argocd-cm里的timeout.reconciliation现在归argo管，源文件在git里。
-- 如果要从120s->60s，应该先改git，然后commit push，等待argo的定时(这里还是120s)，应用后下一次更改才会是60s
+- argocd-cm里的timeout.reconciliation，manageFields里argocd-controller持有该字段，真相之源在git里的bootstrap/argocd/values.yaml。
+- 如果要从120s->60s，应该先改git，然后commit push, 等待120s后argo标OutOfSync，需要手动sync才会更新,之后的间隔interval才是60s。
 - 如果有人手贱kubectl edit cm argocd-cm改到300s，由于没有selfHeal，syncPolicy为空，集群会直接应用，但是argo-server-repo会提示outofsynced，需要手动sync改回。
+
+## T2 argocd新装一个tempo
+1. 流程固定为：p xxx.tgz /data/charts/ && helm repo index /data/charts --url http://192.168.5.174:8090(重新生成index.yaml)
