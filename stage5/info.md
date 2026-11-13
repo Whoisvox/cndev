@@ -150,3 +150,7 @@ secret会消失，existingSecret生效后不再渲染
 
 ## T2 argocd新装一个tempo
 1. 流程固定为：p xxx.tgz /data/charts/ && helm repo index /data/charts --url http://192.168.5.174:8090(重新生成index.yaml)
+
+
+## M3
+### T3 losvc instrument
