@@ -154,3 +154,8 @@ secret会消失，existingSecret生效后不再渲染
 
 ## M3
 ### T3 losvc instrument
+1. add OTel initialize and otelhttp middware.
+2. build image:v13 and push to harbor, update configmap with endpoit env, and deploy.
+3. /ping open subspan; traceID pass into slog.
+**otelhttp的span和withObservaility里手写的duration统计重复吗？各有什么用？**
+  - span进tempo可以跨服务串spans看到调用链；duration则是进prometheus做SLO，这也正是trace和metric的分工。

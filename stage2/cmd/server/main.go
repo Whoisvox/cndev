@@ -20,6 +20,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // Config
@@ -199,6 +203,20 @@ func main() {
 		"gomaxprocs", runtime.GOMAXPROCS(0),
 		"gomemlimit_bytes", debug.SetMemoryLimit(-1),
 	)
+	// otlp init
+	tp, err := initTracer(context.Background(), "logsvc")
+	if err != nil {
+		slog.Error("init tracer failed", "err", err)
+		os.Exit(1)
+	}
+	defer func() {
+		sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tp.Shutdown(sctx); err != nil {
+			slog.Error("tracer shutdown failed", "err", err)
+		}
+	}()
+
 	// load config from Env
 	cfg, err := loadConfig()
 	if err != nil {
@@ -280,11 +298,23 @@ func newHandler(stat *ServeStat) http.Handler {
 	mux.HandleFunc("GET /healthz", stat.healthzHandler)
 	mux.HandleFunc("GET /readyz", stat.readyzHandler)
 	mux.Handle("GET /metrics", promhttp.Handler())
-	return chain(stat, http.TimeoutHandler(mux, stat.cfg.HandlerTimeout, "request timeout\n"))
+	otelOpts := otelhttp.WithFilter(func(r *http.Request) bool {
+		if r.URL.Path != "/healthz" && r.URL.Path != "/readyz" && r.URL.Path != "/metrics" {
+			return true
+		}
+		return false
+	})
+	return otelhttp.NewHandler(chain(stat, http.TimeoutHandler(mux, stat.cfg.HandlerTimeout, "request timeout\n")), "logsvc-http", otelOpts)
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ctx, span := otel.Tracer("logsvc").Start(ctx, "ping-handler")
+	defer span.End()
+	span.SetAttributes(attribute.Int("app.fail_rate", failRate))
+
 	if failRate > 0 && rand.IntN(100) < failRate {
+		span.SetStatus(codes.Error, "injected failure")
 		http.Error(w, "server internal error", http.StatusInternalServerError)
 		return
 	}
