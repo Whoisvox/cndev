@@ -13,6 +13,7 @@ data:
   LOG_LEVEL: "warn"
   HANDLER_TIMEOUT: "2s"
   FAIL_RATE: "0"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector-collector.godev.svc:4317"
 
 ---
 apiVersion: v1
@@ -50,7 +51,7 @@ spec:
       - name: harbor-local174
       containers:
       - name: logsvc
-        image: 192.168.5.174:80/godev/logsvc:v12
+        image: 192.168.5.174:80/godev/logsvc:v13
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
