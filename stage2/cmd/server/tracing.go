@@ -25,6 +25,9 @@ func initTracer(ctx context.Context, serviceName string) (*sdktrace.TracerProvid
 		resource.Default(),
 		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(serviceName)),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("Merge resources: %w", err)
+	}
 
 	// 3) provider: 组装
 	tp := sdktrace.NewTracerProvider(

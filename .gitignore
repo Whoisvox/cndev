@@ -1,1 +1,5 @@
+stage2/bin/
+stage3/bin/
+stage4/bin/
 stage5/k8s-gitops/
+

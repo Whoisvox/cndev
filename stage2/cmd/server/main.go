@@ -24,6 +24,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config
@@ -420,14 +421,19 @@ func withObservaility(obsconfig ObsConfig) func(http.Handler) http.Handler {
 			level := levelForStatus(rec.status)
 
 			// After request, printing log
-			slog.Log(
-				context.Background(),
-				level,
-				"request",
+			attrs := []any{
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", rec.status,
-				"duration_us", time.Since(start).Microseconds())
+				"duration_us", time.Since(start).Microseconds(),
+			}
+			if sc := trace.SpanFromContext(r.Context()).SpanContext(); sc.IsValid() {
+				attrs = append(attrs, slog.String("traceID", sc.TraceID().String()))
+			}
+			slog.Log(
+				r.Context(),
+				level,
+				"request", attrs...)
 
 			// export prometheus metrics
 			httpRequestsTotal.With(prometheus.Labels{
